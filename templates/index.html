@@ -1,0 +1,436 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>影音機列印費用統計</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: 'Segoe UI', 'Microsoft JhengHei', Arial, sans-serif;
+      background: #f4f6f9;
+      color: #222;
+      min-height: 100vh;
+    }
+
+    header {
+      background: #2c3e50;
+      color: #fff;
+      padding: 18px 32px;
+      font-size: 18px;
+      font-weight: 700;
+      letter-spacing: 1px;
+    }
+
+    .container {
+      max-width: 860px;
+      margin: 32px auto;
+      padding: 0 16px;
+    }
+
+    .card {
+      background: #fff;
+      border-radius: 8px;
+      box-shadow: 0 2px 8px rgba(0,0,0,.1);
+      padding: 28px 32px;
+      margin-bottom: 24px;
+    }
+
+    .card h2 {
+      font-size: 15px;
+      margin-bottom: 18px;
+      color: #2c3e50;
+      border-left: 4px solid #2c3e50;
+      padding-left: 10px;
+    }
+
+    .form-row {
+      display: flex;
+      gap: 16px;
+      flex-wrap: wrap;
+      margin-bottom: 16px;
+    }
+
+    .form-group {
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+      flex: 1;
+      min-width: 160px;
+    }
+
+    label { font-size: 13px; color: #555; }
+
+    input[type="text"] {
+      border: 1px solid #ccc;
+      border-radius: 4px;
+      padding: 8px 10px;
+      font-size: 14px;
+      outline: none;
+      transition: border .2s;
+    }
+    input[type="text"]:focus { border-color: #2c3e50; }
+
+    .drop-zone {
+      border: 2px dashed #aaa;
+      border-radius: 6px;
+      padding: 32px;
+      text-align: center;
+      cursor: pointer;
+      transition: all .2s;
+      color: #777;
+      font-size: 14px;
+    }
+    .drop-zone.drag-over {
+      border-color: #2980b9;
+      background: #eaf4fb;
+      color: #2980b9;
+    }
+    .drop-zone .icon { font-size: 36px; margin-bottom: 10px; }
+    .drop-zone input[type="file"] { display: none; }
+
+    .file-list {
+      margin-top: 12px;
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+    }
+    .file-tag {
+      background: #eaf0fb;
+      border: 1px solid #b3c6f0;
+      border-radius: 20px;
+      padding: 4px 12px;
+      font-size: 12px;
+      color: #2c3e50;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+    .file-tag .remove {
+      cursor: pointer;
+      font-size: 14px;
+      color: #888;
+      line-height: 1;
+    }
+    .file-tag .remove:hover { color: #c0392b; }
+
+    .btn {
+      display: inline-block;
+      padding: 10px 24px;
+      border: none;
+      border-radius: 4px;
+      font-size: 14px;
+      cursor: pointer;
+      font-weight: 600;
+      transition: background .2s;
+    }
+    .btn-primary { background: #2c3e50; color: #fff; }
+    .btn-primary:hover { background: #3d5166; }
+    .btn-primary:disabled { background: #aaa; cursor: not-allowed; }
+    .btn-success { background: #27ae60; color: #fff; }
+    .btn-success:hover { background: #219150; }
+    .btn-outline {
+      background: transparent;
+      border: 1px solid #2c3e50;
+      color: #2c3e50;
+      padding: 6px 14px;
+      font-size: 12px;
+    }
+    .btn-outline:hover { background: #2c3e50; color: #fff; }
+
+    #submitBtn { margin-top: 16px; }
+
+    .spinner {
+      display: inline-block;
+      width: 18px; height: 18px;
+      border: 3px solid #fff;
+      border-top-color: transparent;
+      border-radius: 50%;
+      animation: spin .7s linear infinite;
+      vertical-align: middle;
+      margin-right: 6px;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    #error-box {
+      display: none;
+      background: #fdecea;
+      border: 1px solid #f5c6cb;
+      color: #c0392b;
+      border-radius: 4px;
+      padding: 12px 16px;
+      font-size: 13px;
+      margin-top: 16px;
+    }
+
+    #result-section { display: none; }
+
+    .result-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 14px;
+      flex-wrap: wrap;
+      gap: 10px;
+    }
+
+    .summary-info {
+      font-size: 13px;
+      color: #555;
+    }
+    .summary-info strong { color: #2c3e50; }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 13px;
+    }
+    thead tr { background: #2c3e50; color: #fff; }
+    th, td {
+      padding: 9px 12px;
+      text-align: right;
+      border-bottom: 1px solid #e8e8e8;
+    }
+    th:first-child, td:first-child { text-align: left; }
+    tbody tr:hover { background: #f7f9fc; }
+    .total-col { font-weight: 700; color: #c0392b; }
+
+    .action-cell { white-space: nowrap; }
+
+    tfoot td {
+      font-weight: 700;
+      background: #f0f4f8;
+      border-top: 2px solid #2c3e50;
+    }
+
+    .section-label {
+      font-size: 12px;
+      color: #888;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      margin-bottom: 8px;
+      margin-top: 4px;
+    }
+  </style>
+</head>
+<body>
+  <header>影音機列印費用統計工具</header>
+
+  <div class="container">
+
+    <!-- Upload Card -->
+    <div class="card">
+      <h2>上傳 PDF 報表</h2>
+
+      <div class="section-label">統計設定</div>
+      <div class="form-row">
+        <div class="form-group">
+          <label for="year_label">統計年度（民國年）</label>
+          <input type="text" id="year_label" placeholder="例：114">
+        </div>
+      </div>
+
+      <div class="section-label">匯款資訊</div>
+      <div class="form-row">
+        <div class="form-group">
+          <label for="bank_holder">匯款帳戶（收款公司名稱）</label>
+          <input type="text" id="bank_holder" placeholder="例：台灣某某股份有限公司">
+        </div>
+        <div class="form-group">
+          <label for="bank_name">匯款銀行</label>
+          <input type="text" id="bank_name" placeholder="例：台灣銀行">
+        </div>
+      </div>
+      <div class="form-row">
+        <div class="form-group" style="max-width:360px;">
+          <label for="bank_account">匯款帳號</label>
+          <input type="text" id="bank_account" placeholder="例：0123456789012">
+        </div>
+      </div>
+
+      <div class="section-label" style="margin-top:8px;">PDF 報表</div>
+      <div class="drop-zone" id="dropZone">
+        <div class="icon">&#128196;</div>
+        <div>將 PDF 檔案拖曳至此，或<strong>點擊選擇</strong></div>
+        <div style="font-size:12px;margin-top:6px;color:#aaa">支援同時上傳多份報表（跨期自動合併）</div>
+        <input type="file" id="fileInput" multiple accept=".pdf">
+      </div>
+      <div class="file-list" id="fileList"></div>
+
+      <button class="btn btn-primary" id="submitBtn" disabled>解析並計算費用</button>
+      <div id="error-box"></div>
+    </div>
+
+    <!-- Result Card -->
+    <div class="card" id="result-section">
+      <h2>費用明細</h2>
+      <div class="result-header">
+        <div class="summary-info" id="summaryInfo"></div>
+        <button class="btn btn-success" id="downloadAllBtn">&#11015; 下載全部收款單（ZIP）</button>
+      </div>
+      <table>
+        <thead>
+          <tr>
+            <th>員工編號</th>
+            <th>姓名</th>
+            <th>黑白（張）</th>
+            <th>彩色（張）</th>
+            <th class="total-col">合計費用</th>
+            <th>下載</th>
+          </tr>
+        </thead>
+        <tbody id="resultBody"></tbody>
+        <tfoot id="resultFoot"></tfoot>
+      </table>
+    </div>
+
+  </div>
+
+  <script>
+    const dropZone = document.getElementById('dropZone');
+    const fileInput = document.getElementById('fileInput');
+    const fileList = document.getElementById('fileList');
+    const submitBtn = document.getElementById('submitBtn');
+    const errorBox = document.getElementById('error-box');
+    const resultSection = document.getElementById('result-section');
+    const resultBody = document.getElementById('resultBody');
+    const resultFoot = document.getElementById('resultFoot');
+    const downloadAllBtn = document.getElementById('downloadAllBtn');
+    const summaryInfo = document.getElementById('summaryInfo');
+
+    let selectedFiles = [];
+    let currentSessionId = null;
+
+    // ── File selection ──────────────────────────────────
+
+    dropZone.addEventListener('click', () => fileInput.click());
+    dropZone.addEventListener('dragover', e => { e.preventDefault(); dropZone.classList.add('drag-over'); });
+    dropZone.addEventListener('dragleave', () => dropZone.classList.remove('drag-over'));
+    dropZone.addEventListener('drop', e => {
+      e.preventDefault();
+      dropZone.classList.remove('drag-over');
+      addFiles([...e.dataTransfer.files]);
+    });
+    fileInput.addEventListener('change', () => {
+      addFiles([...fileInput.files]);
+      fileInput.value = '';
+    });
+
+    function addFiles(files) {
+      files.filter(f => f.name.endsWith('.pdf')).forEach(f => {
+        if (!selectedFiles.find(x => x.name === f.name && x.size === f.size)) {
+          selectedFiles.push(f);
+        }
+      });
+      renderFileList();
+    }
+
+    function removeFile(idx) {
+      selectedFiles.splice(idx, 1);
+      renderFileList();
+    }
+
+    function renderFileList() {
+      fileList.innerHTML = '';
+      selectedFiles.forEach((f, i) => {
+        const tag = document.createElement('div');
+        tag.className = 'file-tag';
+        tag.innerHTML = `<span>${f.name}</span><span class="remove" onclick="removeFile(${i})">&#10005;</span>`;
+        fileList.appendChild(tag);
+      });
+      submitBtn.disabled = selectedFiles.length === 0;
+    }
+
+    // ── Submit ──────────────────────────────────────────
+
+    submitBtn.addEventListener('click', async () => {
+      errorBox.style.display = 'none';
+      resultSection.style.display = 'none';
+
+      const formData = new FormData();
+      selectedFiles.forEach(f => formData.append('pdfs', f));
+      formData.append('year_label', document.getElementById('year_label').value);
+      formData.append('bank_holder', document.getElementById('bank_holder').value);
+      formData.append('bank_name', document.getElementById('bank_name').value);
+      formData.append('bank_account', document.getElementById('bank_account').value);
+
+      submitBtn.disabled = true;
+      submitBtn.innerHTML = '<span class="spinner"></span>解析中…';
+
+      try {
+        const res = await fetch('/upload', { method: 'POST', body: formData });
+        const data = await res.json();
+
+        if (!res.ok) {
+          showError(data.error || '發生未知錯誤');
+          return;
+        }
+
+        currentSessionId = data.session_id;
+        renderResults(data);
+
+      } catch (err) {
+        showError('網路錯誤：' + err.message);
+      } finally {
+        submitBtn.disabled = false;
+        submitBtn.innerHTML = '解析並計算費用';
+      }
+    });
+
+    function showError(msg) {
+      errorBox.textContent = msg;
+      errorBox.style.display = 'block';
+    }
+
+    // ── Render results ───────────────────────────────────
+
+    function renderResults(data) {
+      resultBody.innerHTML = '';
+      resultFoot.innerHTML = '';
+
+      const employees = data.employees;
+      let totalBw = 0, totalColor = 0, totalAmt = 0;
+
+      employees.forEach(emp => {
+        totalBw += (emp.total_bw || 0);
+        totalColor += (emp.total_color || 0);
+        totalAmt += (emp.total || 0);
+
+        const tr = document.createElement('tr');
+        tr.innerHTML = `
+          <td>${emp.employee_id}</td>
+          <td>${emp.name || '—'}</td>
+          <td>${emp.total_bw || 0}</td>
+          <td>${emp.total_color || 0}</td>
+          <td class="total-col">$${emp.total || 0}</td>
+          <td class="action-cell">
+            <a href="/download/single/${data.session_id}/${encodeURIComponent(emp.employee_id)}" target="_blank">
+              <button class="btn btn-outline">PDF</button>
+            </a>
+          </td>`;
+        resultBody.appendChild(tr);
+      });
+
+      resultFoot.innerHTML = `
+        <tr>
+          <td colspan="2">合計（${employees.length} 人）</td>
+          <td>${totalBw}</td>
+          <td>${totalColor}</td>
+          <td class="total-col">$${totalAmt}</td>
+          <td></td>
+        </tr>`;
+
+      const yearLabel = data.year_label ? data.year_label + '年' : '';
+      summaryInfo.innerHTML = yearLabel ? `統計年度：<strong>${yearLabel}</strong>` : `共 ${employees.length} 位員工`;
+
+      downloadAllBtn.onclick = () => {
+        window.location.href = `/download/zip/${data.session_id}`;
+      };
+
+      resultSection.style.display = 'block';
+      resultSection.scrollIntoView({ behavior: 'smooth' });
+    }
+  </script>
+</body>
+</html>
