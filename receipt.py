@@ -31,9 +31,9 @@ _FONT_CANDIDATES = [
     ("/System/Library/Fonts/STHeiti Light.ttc", 0),
     ("/System/Library/Fonts/STHeiti Medium.ttc", 0),
     ("/Library/Fonts/Arial Unicode MS.ttf", None),
+    ("/usr/share/fonts/truetype/wqy/wqy-microhei.ttc", 0),
     ("/usr/share/fonts/opentype/noto/NotoSansCJK-Regular.ttc", 0),
     ("/usr/share/fonts/truetype/noto/NotoSansCJK-Regular.ttc", 0),
-    ("/usr/share/fonts/opentype/noto/NotoSansCJK-TC-Regular.otf", None),
 ]
 
 for _path, _idx in _FONT_CANDIDATES:
