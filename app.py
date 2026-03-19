@@ -61,6 +61,30 @@ def index():
     return render_template("index.html")
 
 
+@app.route("/debug")
+def debug():
+    """測試 Tesseract 與 pdf2image 環境是否正常。"""
+    import subprocess
+    info = {}
+    try:
+        result = subprocess.run(["tesseract", "--version"], capture_output=True, text=True)
+        info["tesseract_version"] = result.stdout or result.stderr
+    except Exception as e:
+        info["tesseract_version"] = "ERROR: {}".format(e)
+    try:
+        result = subprocess.run(["tesseract", "--list-langs"], capture_output=True, text=True)
+        info["tesseract_langs"] = result.stdout or result.stderr
+    except Exception as e:
+        info["tesseract_langs"] = "ERROR: {}".format(e)
+    info["tessdata_prefix"] = os.environ.get("TESSDATA_PREFIX", "not set")
+    try:
+        import pytesseract
+        info["pytesseract_cmd"] = pytesseract.get_tesseract_version()
+    except Exception as e:
+        info["pytesseract"] = "ERROR: {}".format(e)
+    return jsonify(info)
+
+
 @app.route("/upload", methods=["POST"])
 def upload():
     """接收上傳的 PDF 檔案，解析後回傳員工費用列表（JSON）。"""
