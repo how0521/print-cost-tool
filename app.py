@@ -78,6 +78,11 @@ def debug():
         info["tesseract_langs"] = "ERROR: {}".format(e)
     info["tessdata_prefix"] = os.environ.get("TESSDATA_PREFIX", "not set")
     try:
+        result = subprocess.run(["fc-list", ":lang=zh"], capture_output=True, text=True)
+        info["cjk_fonts"] = result.stdout or result.stderr
+    except Exception as e:
+        info["cjk_fonts"] = "ERROR: {}".format(e)
+    try:
         import pytesseract
         info["pytesseract_version"] = str(pytesseract.get_tesseract_version())
     except Exception as e:
