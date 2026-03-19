@@ -1,5 +1,15 @@
 [phases.setup]
-nixPkgs = ["tesseract", "tesseract-lang", "poppler_utils", "python311"]
+nixPkgs = ["tesseract", "poppler_utils", "python311", "curl"]
+
+[phases.build]
+cmds = [
+  "mkdir -p /app/tessdata",
+  "curl -L -o /app/tessdata/eng.traineddata https://github.com/tesseract-ocr/tessdata_fast/raw/main/eng.traineddata",
+  "curl -L -o /app/tessdata/chi_tra.traineddata https://github.com/tesseract-ocr/tessdata_fast/raw/main/chi_tra.traineddata"
+]
+
+[variables]
+TESSDATA_PREFIX = "/app/tessdata"
 
 [start]
 cmd = "gunicorn app:app --bind 0.0.0.0:$PORT"
