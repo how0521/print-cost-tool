@@ -85,6 +85,12 @@ def debug():
     return jsonify(info)
 
 
+@app.errorhandler(Exception)
+def handle_exception(e):
+    import traceback
+    return jsonify({"error": str(e), "trace": traceback.format_exc()}), 500
+
+
 @app.route("/upload", methods=["POST"])
 def upload():
     """接收上傳的 PDF 檔案，解析後回傳員工費用列表（JSON）。"""
