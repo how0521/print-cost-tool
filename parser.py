@@ -226,12 +226,21 @@ def parse_pdf(filepath):
         ...
     ]
     """
-    pages_images = convert_from_path(filepath, dpi=200)
+    from pdf2image import pdfinfo_from_path
+    try:
+        page_count = pdfinfo_from_path(filepath)["Pages"]
+    except Exception:
+        page_count = 999  # fallback: 讓 convert_from_path 自行決定
 
     period_data = {}  # init_date_iso -> {print_date, employees}
 
-    for img in pages_images:
+    for page_num in range(1, page_count + 1):
+        page_imgs = convert_from_path(filepath, dpi=300, first_page=page_num, last_page=page_num)
+        if not page_imgs:
+            break
+        img = page_imgs[0]
         rotated = img.rotate(-90, expand=True)
+        del page_imgs, img  # 釋放記憶體
         try:
             result = _parse_page(rotated)
         except Exception:
