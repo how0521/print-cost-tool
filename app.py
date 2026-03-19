@@ -58,7 +58,20 @@ def _allowed(filename):
 
 @app.route("/")
 def index():
-    return render_template("index.html")
+    return render_template("index.html",
+        default_bank_holder=os.environ.get("DEFAULT_BANK_HOLDER", ""),
+        default_bank_name=os.environ.get("DEFAULT_BANK_NAME", ""),
+        default_bank_account=os.environ.get("DEFAULT_BANK_ACCOUNT", ""),
+    )
+
+
+@app.route("/env-check")
+def env_check():
+    return jsonify({
+        "DEFAULT_BANK_HOLDER": os.environ.get("DEFAULT_BANK_HOLDER", "(not set)"),
+        "DEFAULT_BANK_NAME": os.environ.get("DEFAULT_BANK_NAME", "(not set)"),
+        "DEFAULT_BANK_ACCOUNT": os.environ.get("DEFAULT_BANK_ACCOUNT", "(not set)"),
+    })
 
 
 @app.route("/debug")

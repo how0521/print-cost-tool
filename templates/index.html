@@ -235,17 +235,17 @@
       <div class="form-row">
         <div class="form-group">
           <label for="bank_holder">匯款帳戶（收款公司名稱）</label>
-          <input type="text" id="bank_holder" placeholder="例：台灣某某股份有限公司">
+          <input type="text" id="bank_holder" placeholder="例：台灣某某股份有限公司" value="{{ default_bank_holder }}">
         </div>
         <div class="form-group">
           <label for="bank_name">匯款銀行</label>
-          <input type="text" id="bank_name" placeholder="例：台灣銀行">
+          <input type="text" id="bank_name" placeholder="例：台灣銀行" value="{{ default_bank_name }}">
         </div>
       </div>
       <div class="form-row">
         <div class="form-group" style="max-width:360px;">
           <label for="bank_account">匯款帳號</label>
-          <input type="text" id="bank_account" placeholder="例：0123456789012">
+          <input type="text" id="bank_account" placeholder="例：0123456789012" value="{{ default_bank_account }}">
         </div>
       </div>
 
