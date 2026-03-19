@@ -226,7 +226,7 @@ def parse_pdf(filepath):
         ...
     ]
     """
-    pages_images = convert_from_path(filepath, dpi=300)
+    pages_images = convert_from_path(filepath, dpi=200)
 
     period_data = {}  # init_date_iso -> {print_date, employees}
 
