@@ -79,7 +79,7 @@ def debug():
     info["tessdata_prefix"] = os.environ.get("TESSDATA_PREFIX", "not set")
     try:
         import pytesseract
-        info["pytesseract_cmd"] = pytesseract.get_tesseract_version()
+        info["pytesseract_version"] = str(pytesseract.get_tesseract_version())
     except Exception as e:
         info["pytesseract"] = "ERROR: {}".format(e)
     return jsonify(info)
@@ -118,10 +118,14 @@ def upload():
         filenames.append(f.filename)
 
         try:
+            import traceback
+            print("[upload] start parse_pdf:", f.filename, flush=True)
             periods = parse_pdf(str(dest))
+            print("[upload] parse_pdf done, periods:", len(periods), flush=True)
             all_period_lists.append(periods)
         except Exception as e:
-            return jsonify({"error": "解析 {} 時發生錯誤：{}".format(f.filename, e)}), 500
+            print("[upload] ERROR:", traceback.format_exc(), flush=True)
+            return jsonify({"error": "解析 {} 時發生錯誤：{}".format(f.filename, e), "trace": traceback.format_exc()}), 500
         finally:
             dest.unlink(missing_ok=True)
 
