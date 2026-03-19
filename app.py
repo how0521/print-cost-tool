@@ -83,6 +83,12 @@ def debug():
     except Exception as e:
         info["cjk_fonts"] = "ERROR: {}".format(e)
     try:
+        import receipt
+        info["pdf_font"] = receipt._FONT_NAME
+        info["font_load_errors"] = receipt._FONT_ERRORS
+    except Exception as e:
+        info["pdf_font"] = "ERROR: {}".format(e)
+    try:
         import pytesseract
         info["pytesseract_version"] = str(pytesseract.get_tesseract_version())
     except Exception as e:

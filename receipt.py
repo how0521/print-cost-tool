@@ -25,6 +25,7 @@ from reportlab.platypus import (
 
 # ── 中文字型 ──────────────────────────────────────────────
 _FONT_NAME = "Helvetica"
+_FONT_ERRORS = []
 
 _FONT_CANDIDATES = [
     ("/System/Library/Fonts/STHeiti Light.ttc", 0),
@@ -44,8 +45,8 @@ for _path, _idx in _FONT_CANDIDATES:
                 pdfmetrics.registerFont(TTFont("CJK", _path))
             _FONT_NAME = "CJK"
             break
-        except Exception:
-            pass
+        except Exception as _e:
+            _FONT_ERRORS.append("{}: {}".format(_path, _e))
 
 
 # ── Styles ─────────────────────────────────────────────────
