@@ -70,6 +70,7 @@ _S_TD_R      = _style("tdr",       fontSize=9,  alignment=2)
 _S_TD_R_B    = _style("tdr_b",     fontSize=9,  alignment=2)
 _S_TOTAL     = _style("total",     fontSize=10, textColor=colors.HexColor("#c0392b"), alignment=2)
 _S_FOOTER    = _style("footer",    fontSize=8,  textColor=colors.grey, alignment=2)
+_S_NOTE      = _style("note",      fontSize=10, textColor=colors.HexColor("#2980b9"))
 
 
 def _p(text, style):
@@ -110,22 +111,21 @@ def generate_receipt_pdf(employee, year_label, bank_info):
     account = bank_info.get("account", "")
     total = employee.get("total", 0)
 
+    label_w = usable_w * 0.2
+    value_w = usable_w * 0.8
     header_data = [
-        [
-            _p("員工：{}".format(display_name), _S_HEADER),
-            _p("匯款帳戶：{}".format(holder), _S_HEADER),
-        ],
-        [
-            _p("合計匯款金額：${}".format(total), _S_HEADER),
-            _p("匯款銀行：{}　匯款帳號：{}".format(bank, account), _S_HEADER),
-        ],
+        [_p("{}：".format(display_name), _S_HEADER), _p("", _S_HEADER)],
+        [_p("匯款帳戶：", _S_HEADER), _p(holder, _S_HEADER)],
+        [_p("匯款銀行：", _S_HEADER), _p(bank, _S_HEADER)],
+        [_p("匯款帳號：", _S_HEADER), _p(account, _S_HEADER)],
+        [_p("合計匯款金額：", _S_HEADER), _p("${}".format(total), _S_HEADER)],
     ]
-    header_table = Table(header_data, colWidths=[usable_w * 0.45, usable_w * 0.55])
+    header_table = Table(header_data, colWidths=[label_w, value_w])
     header_table.setStyle(TableStyle([
         ("FONTNAME", (0, 0), (-1, -1), _FONT_NAME),
         ("FONTSIZE", (0, 0), (-1, -1), 11),
-        ("TOPPADDING", (0, 0), (-1, -1), 2),
-        ("BOTTOMPADDING", (0, 0), (-1, -1), 2),
+        ("TOPPADDING", (0, 0), (-1, -1), 1),
+        ("BOTTOMPADDING", (0, 0), (-1, -1), 1),
         ("LEFTPADDING", (0, 0), (-1, -1), 0),
         ("RIGHTPADDING", (0, 0), (-1, -1), 4),
         ("VALIGN", (0, 0), (-1, -1), "MIDDLE"),
@@ -257,6 +257,8 @@ def generate_receipt_pdf(employee, year_label, bank_info):
     story.append(period_table)
 
     story.append(Spacer(1, 4 * mm))
+    story.append(_p("黑白一張 $3　彩色一張 $10", _S_NOTE))
+    story.append(Spacer(1, 2 * mm))
     today = date.today().strftime("%Y/%m/%d")
     story.append(_p("列印日期：{}".format(today), _S_FOOTER))
 
