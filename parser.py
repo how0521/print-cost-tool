@@ -140,7 +140,8 @@ def _parse_page(img):
     if init_date is None:
         return None
 
-    m_print = re.search(r"報表列印日期\s*[：:]\s*(\d{2}/\d{2}/\d{4})", text)
+    # 冒號可能被 OCR 漏讀，日期前也可能多一個誤讀字元（如 O05 → 05）
+    m_print = re.search(r"報表列印日期\s*[：:]?\s*[^\d]?(\d{2}/\d{2}/\d{4})", text)
     if not m_print:
         return None
     print_date = _parse_dd_mm_yyyy(m_print.group(1))
