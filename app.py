@@ -33,18 +33,65 @@ EMPLOYEE_NAMES_FILE = Path(__file__).parent / "employee_names.csv"
 
 
 def _load_employee_names():
-    # type: () -> dict
-    """載入員工編號對應人名對照表。"""
-    mapping = {}
+    # type: () -> tuple
+    """載入員工編號對應人名對照表，以及別名→主編號的對照表。
+    回傳 (name_map, alias_map)。
+    alias_map: {alias_id: primary_id}，用於將多個編號合併到主編號下計算。
+    """
+    name_map = {}
+    alias_map = {}
     if not EMPLOYEE_NAMES_FILE.exists():
-        return mapping
+        return name_map, alias_map
     with open(str(EMPLOYEE_NAMES_FILE), newline="", encoding="utf-8-sig") as f:
         for row in csv.DictReader(f):
             eid = row.get("employee_id", "").strip()
             name = row.get("name", "").strip()
-            if eid and name:
-                mapping[eid] = name
-    return mapping
+            primary_id = row.get("primary_id", "").strip()
+            if not eid or not name:
+                continue
+            name_map[eid] = name
+            if primary_id:
+                alias_map[eid] = primary_id
+    return name_map, alias_map
+
+
+def _merge_aliases(employees, alias_map):
+    # type: (list, dict) -> list
+    """將 alias_map 中的別名員工資料合併到主員工下，移除別名條目。"""
+    if not alias_map:
+        return employees
+
+    by_id = {emp["employee_id"]: emp for emp in employees}
+
+    for alias_id, primary_id in alias_map.items():
+        alias_emp = by_id.get(alias_id)
+        if not alias_emp:
+            continue
+        primary_emp = by_id.get(primary_id)
+        if not primary_emp:
+            # 主編號本次無資料，直接把 alias 改掛在主編號下
+            alias_emp["employee_id"] = primary_id
+            by_id[primary_id] = alias_emp
+            del by_id[alias_id]
+            continue
+        # 合併各期資料（期別 label 相同則加總）
+        primary_periods = {p["label"]: p for p in primary_emp["periods"]}
+        for ap in alias_emp["periods"]:
+            label = ap["label"]
+            if label in primary_periods:
+                pp = primary_periods[label]
+                pp["bw"] += ap["bw"]
+                pp["color"] += ap["color"]
+                pp["bw_cost"] += ap["bw_cost"]
+                pp["color_cost"] += ap["color_cost"]
+                pp["subtotal"] += ap["subtotal"]
+            else:
+                primary_emp["periods"].append(ap)
+                primary_periods[label] = ap
+        primary_emp["total"] += alias_emp["total"]
+        del by_id[alias_id]
+
+    return list(by_id.values())
 
 
 def _allowed(filename):
@@ -162,8 +209,9 @@ def upload():
 
     employees = build_employee_report(merged)
 
-    # 填入員工名稱
-    name_map = _load_employee_names()
+    # 合併別名編號（如 tbd01–tbd04 合入主編號），並填入員工名稱
+    name_map, alias_map = _load_employee_names()
+    employees = _merge_aliases(employees, alias_map)
     for emp in employees:
         emp["name"] = name_map.get(emp["employee_id"], "")
 
