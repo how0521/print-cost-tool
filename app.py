@@ -214,6 +214,7 @@ def upload():
     employees = _merge_aliases(employees, alias_map)
     for emp in employees:
         emp["name"] = name_map.get(emp["employee_id"], "")
+    employees = [emp for emp in employees if emp["name"]]
 
     if not employees:
         return jsonify({"error": "未找到任何員工資料。"}), 422
