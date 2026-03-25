@@ -192,8 +192,12 @@ def _parse_page(img):
                 # 累積欄本身也常有 OCR 誤讀，不做其他情況的修正以避免誤改正確值
                 if cumulative > 0 and bw + color < cumulative * 0.5:
                     bw = cumulative - color
-            elif bw == 0 and len(tokens_after) == 2:
-                bw = tokens_after[1]
+            elif len(tokens_after) == 2:
+                # tokens 可能為 [bw_誤讀, 累積]（彩色 token 被 OCR 略去）
+                # 若 bw 遠小於累積，用累積近似黑白張數
+                cumulative = tokens_after[1]
+                if cumulative > 0 and bw < cumulative * 0.5:
+                    bw = cumulative
                 color = 0
             else:
                 color = 0
