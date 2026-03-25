@@ -220,6 +220,10 @@ def _parse_page(img):
             if bw == 0 and color == 0:
                 continue
 
+            print("[_parse_page] uid={} tokens={} nums={} bw={} color={}".format(
+                user_id, row_tokens, nums_str, bw, color
+            ), flush=True)
+
             if user_id in employees:
                 employees[user_id]["bw"] += bw
                 employees[user_id]["color"] += color
