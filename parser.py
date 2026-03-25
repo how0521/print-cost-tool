@@ -270,13 +270,19 @@ def parse_pdf(filepath):
         del page_imgs, img  # 釋放記憶體
         try:
             result = _parse_page(rotated)
-        except Exception:
+        except Exception as e:
+            print("[parse_pdf] p{} exception: {}".format(page_num, e), flush=True)
             continue
 
         if result is None:
+            print("[parse_pdf] p{} skipped (parse failed)".format(page_num), flush=True)
             continue
 
         init_iso = result["init_date"].isoformat()
+        print("[parse_pdf] p{} init={} employees={}".format(
+            page_num, init_iso,
+            {uid: v for uid, v in result["employees"].items()}
+        ), flush=True)
 
         if init_iso not in period_data:
             period_data[init_iso] = {
