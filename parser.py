@@ -154,15 +154,18 @@ def _parse_page(img):
 
     employees = {}
 
+    # OCR 字母→數字修正表（包含括號/豎線誤讀）
+    _repair = str.maketrans("OoIlA]|", "0011411")
+
+    def _fix(t):
+        r = t.translate(_repair)
+        return r if re.match(r"^\d+$", r) else t
+
     for row_tokens in rows:
         try:
-            # 修正常見 OCR 字母→數字誤讀，再過濾純數字 token
-            _repair = str.maketrans("OoIlA", "00114")
-            def _fix(t):
-                r = t.translate(_repair)
-                return r if re.match(r"^\d+$", r) else t
+            # 純數字 token 列表（用於計算黑白/彩色張數）
             nums_str = [_fix(t) for t in row_tokens if re.match(r"^\d+$", _fix(t))]
-            if len(nums_str) < 8:
+            if len(nums_str) < 5:
                 continue
 
             nums = [int(n) for n in nums_str]
@@ -189,11 +192,16 @@ def _parse_page(img):
             else:
                 color = 0
 
-            # user_id：固定取 nums_str 中的第 2 個 token（index=1）
-            # 結構：[序號] [使用者名稱=ID] [使用者ID] [卡號] [限制黑白] [限制彩色] [黑白] [彩色] [累積]
-            if len(nums_str) < 2:
+            # user_id：從原始 row_tokens 中，取最後一個限制碼往前第 4 個 token
+            # 此相對位置固定，不受行首雜訊 token 或含字母 ID（如 tbd01）影響
+            limit_raw_positions = [i for i, t in enumerate(row_tokens)
+                                   if re.match(r"^9{7}$", t)]
+            if not limit_raw_positions:
                 continue
-            user_id = nums_str[1]
+            uid_pos = limit_raw_positions[-1] - 4
+            if uid_pos < 0:
+                continue
+            user_id = row_tokens[uid_pos]
 
             # 基本驗證
             if len(user_id) < 3 or len(user_id) > 10:
