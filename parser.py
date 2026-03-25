@@ -173,9 +173,17 @@ def _parse_page(img):
             if last_limit < 0 or last_limit + 1 >= len(nums):
                 continue
 
-            bw = nums[last_limit + 1]
-            # color 欄可能因 OCR 漏讀而缺失，設預設值 0
-            color = nums[last_limit + 2] if last_limit + 2 < len(nums) else 0
+            tokens_after = nums[last_limit + 1:]
+            bw = tokens_after[0]
+            # 正常結構：[黑白, 彩色, 累積]（3 個 token）
+            # 若黑白欄被 OCR 誤讀丟棄，只剩 [0, 累積]（2 個 token）：用累積還原黑白
+            if len(tokens_after) >= 3:
+                color = tokens_after[1]
+            elif bw == 0 and len(tokens_after) == 2:
+                bw = tokens_after[1]
+                color = 0
+            else:
+                color = 0
 
             # user_id：固定取 nums_str 中的第 2 個 token（index=1）
             # 結構：[序號] [使用者名稱=ID] [使用者ID] [卡號] [限制黑白] [限制彩色] [黑白] [彩色] [累積]
