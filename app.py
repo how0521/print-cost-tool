@@ -230,6 +230,10 @@ def upload():
             "total_bw": total_bw,
             "total_color": total_color,
             "total": emp["total"],
+            "periods": [
+                {"label": p["label"], "bw": p["bw"], "color": p["color"]}
+                for p in emp["periods"]
+            ],
         })
 
     # 把完整資料（含期別明細）存入 session
