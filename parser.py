@@ -156,8 +156,12 @@ def _parse_page(img):
 
     for row_tokens in rows:
         try:
-            # 從該列取出所有數字 token（保留原始字串以保留前導零）
-            nums_str = [t for t in row_tokens if re.match(r"^\d+$", t)]
+            # 修正常見 OCR 字母→數字誤讀，再過濾純數字 token
+            _repair = str.maketrans("OoIlA", "00114")
+            def _fix(t):
+                r = t.translate(_repair)
+                return r if re.match(r"^\d+$", r) else t
+            nums_str = [_fix(t) for t in row_tokens if re.match(r"^\d+$", _fix(t))]
             if len(nums_str) < 8:
                 continue
 
