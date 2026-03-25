@@ -285,7 +285,9 @@ def merge_periods(all_periods):
     # type: (list) -> list
     """
     合併多份 PDF 解析結果。
-    相同 start_date 的 period 合併（員工張數加總）。
+    相同 start_date 的 period 合併：
+      - 同一 PDF 內的頁面已在 parse_pdf 加總，此處處理跨檔案情況。
+      - 各機器報表顯示的是累積總量，跨檔案同一員工取最大值（避免重複計算）。
     依 start_date 排序後回傳。
     """
     merged = {}
@@ -297,11 +299,15 @@ def merge_periods(all_periods):
                 merged[sd] = {
                     "start_date": sd,
                     "label": period["label"],
-                    "employees": defaultdict(lambda: {"bw": 0, "color": 0}),
+                    "employees": {},
                 }
             for uid, counts in period["employees"].items():
-                merged[sd]["employees"][uid]["bw"] += counts["bw"]
-                merged[sd]["employees"][uid]["color"] += counts["color"]
+                if uid not in merged[sd]["employees"]:
+                    merged[sd]["employees"][uid] = {"bw": counts["bw"], "color": counts["color"]}
+                else:
+                    existing = merged[sd]["employees"][uid]
+                    existing["bw"] = max(existing["bw"], counts["bw"])
+                    existing["color"] = max(existing["color"], counts["color"])
 
     result = []
     for sd in sorted(merged.keys()):
