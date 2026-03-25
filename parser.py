@@ -155,7 +155,7 @@ def _parse_page(img):
     employees = {}
 
     # OCR 字母→數字修正表（包含括號/豎線誤讀）
-    _repair = str.maketrans("OoIlA]|", "0011411")
+    _repair = str.maketrans("OoIlAi]|", "00114111")
 
     def _fix(t):
         r = t.translate(_repair)
@@ -186,6 +186,12 @@ def _parse_page(img):
             # 若黑白欄被 OCR 誤讀丟棄，只剩 [0, 累積]（2 個 token）：用累積還原黑白
             if len(tokens_after) >= 3:
                 color = tokens_after[1]
+                cumulative = tokens_after[2]
+                # 用累積值交叉驗證：
+                # 僅當黑白+彩色遠低於累積（< 50%）才修正黑白欄（代表黑白被 OCR 截斷）
+                # 累積欄本身也常有 OCR 誤讀，不做其他情況的修正以避免誤改正確值
+                if cumulative > 0 and bw + color < cumulative * 0.5:
+                    bw = cumulative - color
             elif bw == 0 and len(tokens_after) == 2:
                 bw = tokens_after[1]
                 color = 0
