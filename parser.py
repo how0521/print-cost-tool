@@ -187,11 +187,13 @@ def _parse_page(img):
             if len(tokens_after) >= 3:
                 color = tokens_after[1]
                 cumulative = tokens_after[2]
-                # 用累積值交叉驗證：
-                # 僅當黑白+彩色遠低於累積（< 50%）才修正黑白欄（代表黑白被 OCR 截斷）
-                # 累積欄本身也常有 OCR 誤讀，不做其他情況的修正以避免誤改正確值
+                # 修正黑白欄：bw+color 遠低於累積（< 50%）代表黑白被 OCR 截斷
                 if cumulative > 0 and bw + color < cumulative * 0.5:
                     bw = cumulative - color
+                # 修正彩色欄：累積-黑白 ≥ color 的 3 倍且差距 > 10 張，
+                # 代表彩色欄數字被 OCR 誤讀（如 40→10），用累積-黑白修正
+                if cumulative > bw > 0 and cumulative - bw >= color * 3 and cumulative - bw - color > 10:
+                    color = cumulative - bw
             elif len(tokens_after) == 2:
                 # tokens 可能為 [bw_誤讀, 累積]（彩色 token 被 OCR 略去）
                 # 若 bw 遠小於累積，用累積近似黑白張數
