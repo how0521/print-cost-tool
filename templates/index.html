@@ -212,6 +212,44 @@
       margin-bottom: 8px;
       margin-top: 4px;
     }
+
+    .toggle-btn {
+      background: none;
+      border: none;
+      cursor: pointer;
+      font-size: 12px;
+      color: #2980b9;
+      padding: 2px 6px;
+      border-radius: 3px;
+      transition: background .15s;
+    }
+    .toggle-btn:hover { background: #eaf4fb; }
+
+    .detail-row { display: none; }
+    .detail-row td {
+      background: #f7f9fc;
+      padding: 0;
+      border-bottom: 1px solid #e0e6ef;
+    }
+    .detail-table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 12px;
+    }
+    .detail-table th {
+      background: #eaf0f8;
+      color: #555;
+      font-weight: 600;
+      padding: 6px 12px;
+    }
+    .detail-table td {
+      padding: 5px 12px;
+      border-bottom: 1px solid #e8ecf2;
+      background: none;
+      text-align: right;
+    }
+    .detail-table td:first-child { text-align: left; color: #666; }
+    .detail-table tr:last-child td { border-bottom: none; }
   </style>
 </head>
 <body>
@@ -272,6 +310,7 @@
       <table>
         <thead>
           <tr>
+            <th></th>
             <th>員工編號</th>
             <th>姓名</th>
             <th>黑白（張）</th>
@@ -392,13 +431,16 @@
       const employees = data.employees;
       let totalBw = 0, totalColor = 0, totalAmt = 0;
 
-      employees.forEach(emp => {
+      employees.forEach((emp, idx) => {
         totalBw += (emp.total_bw || 0);
         totalColor += (emp.total_color || 0);
         totalAmt += (emp.total || 0);
 
+        const detailId = `detail-${idx}`;
+
         const tr = document.createElement('tr');
         tr.innerHTML = `
+          <td><button class="toggle-btn" data-target="${detailId}">▶</button></td>
           <td>${emp.employee_id}</td>
           <td>${emp.name || '—'}</td>
           <td>${emp.total_bw || 0}</td>
@@ -410,11 +452,42 @@
             </a>
           </td>`;
         resultBody.appendChild(tr);
+
+        // 逐期明細列（預設隱藏）
+        const periods = emp.periods || [];
+        const detailRows = periods.map(p => `
+          <tr>
+            <td>${p.label}</td>
+            <td>${p.bw}</td>
+            <td>${p.color}</td>
+          </tr>`).join('');
+
+        const detailTr = document.createElement('tr');
+        detailTr.className = 'detail-row';
+        detailTr.id = detailId;
+        detailTr.innerHTML = `
+          <td colspan="7">
+            <table class="detail-table">
+              <thead><tr><th>期別</th><th>黑白（張）</th><th>彩色（張）</th></tr></thead>
+              <tbody>${detailRows}</tbody>
+            </table>
+          </td>`;
+        resultBody.appendChild(detailTr);
+      });
+
+      // 展開／收合
+      resultBody.addEventListener('click', e => {
+        const btn = e.target.closest('.toggle-btn');
+        if (!btn) return;
+        const target = document.getElementById(btn.dataset.target);
+        const open = target.style.display === 'table-row';
+        target.style.display = open ? 'none' : 'table-row';
+        btn.textContent = open ? '▶' : '▼';
       });
 
       resultFoot.innerHTML = `
         <tr>
-          <td colspan="2">合計（${employees.length} 人）</td>
+          <td colspan="3">合計（${employees.length} 人）</td>
           <td>${totalBw}</td>
           <td>${totalColor}</td>
           <td class="total-col">$${totalAmt}</td>
