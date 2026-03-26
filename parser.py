@@ -163,12 +163,13 @@ def _parse_page(img):
 
     for row_tokens in rows:
         try:
-            # 純數字 token 列表（用於計算黑白/彩色張數）
-            nums_str = [_fix(t) for t in row_tokens if re.match(r"^\d+$", _fix(t))]
+            # 純數字 token 列表（同時保留原始 token 供後續判斷是否為 OCR 字母誤讀）
+            num_pairs = [(int(_fix(t)), t) for t in row_tokens if re.match(r"^\d+$", _fix(t))]
+            nums_str = [str(v) for v, _ in num_pairs]
             if len(nums_str) < 5:
                 continue
 
-            nums = [int(n) for n in nums_str]
+            nums = [v for v, _ in num_pairs]
 
             # 找最後一個恰好是限制頁數欄的值（9999999，7位數）
             # 使用 9000000 <= n <= 9999999 區間，避免把 8 位員工編號（如 16307809）誤判
@@ -191,16 +192,34 @@ def _parse_page(img):
                 if cumulative > 0 and bw + color < cumulative * 0.5:
                     bw = cumulative - color
                 # 修正彩色欄：累積-黑白 ≥ color 的 3 倍且差距 > 10 張，
-                # 代表彩色欄數字被 OCR 誤讀（如 40→10），用累積-黑白修正
+                # 代表彩色欄數字被 OCR 誤讀（如 40→10），用累積-黑白估算
                 if cumulative > bw > 0 and cumulative - bw >= color * 3 and cumulative - bw - color > 10:
-                    color = cumulative - bw
+                    color_est = cumulative - bw
+                    # 嘗試修正彩色欄第一位數字（如 40 被讀成 10）：
+                    # 用 color_est 搜尋最接近的「僅第一位不同」候選值
+                    if 10 <= color <= 99:
+                        best, best_diff = color_est, abs(color_est - color)
+                        for d in range(10):
+                            cand = d * 10 + (color % 10)
+                            diff = abs(color_est - cand)
+                            if diff < best_diff:
+                                best_diff, best = diff, cand
+                        color = best if best_diff <= 3 else color_est
+                    else:
+                        color = color_est
             elif len(tokens_after) == 2:
-                # tokens 可能為 [bw_誤讀, 累積]（彩色 token 被 OCR 略去）
-                # 若 bw 遠小於累積，用累積近似黑白張數
                 cumulative = tokens_after[1]
-                if cumulative > 0 and bw < cumulative * 0.5:
+                bw_raw = num_pairs[last_limit + 1][1]
+                if not re.match(r"^\d+$", bw_raw):
+                    # bw token 原本是字母（OCR 把多位數誤讀為單一字母）：
+                    # 修復後的值是彩色張數，黑白 = 累積 - 彩色
+                    color = bw
+                    bw = cumulative - color
+                elif cumulative > 0 and bw < cumulative * 0.5:
                     bw = cumulative
-                color = 0
+                    color = 0
+                else:
+                    color = 0
             else:
                 color = 0
 
